@@ -70,8 +70,38 @@ public class AppTest {
                 System.out.println(">>" + r.getNode("p"));
                 count++;
             }
-            // expected node: /p2 {jcr:primaryType=test:Parent, test:parentName=name2}
-            assertEquals(1, count);
+            // expected rows:
+            //    /p1 {jcr:primaryType=test:Parent, test:parentName=name1} /p1/c1 {jcr:primaryType = test:Child, test:childName = name2}
+            //    /p2 {jcr:primaryType=test:Parent, test:parentName=name2}
+            assertEquals(2, count);
+        } finally {
+            session.logout();
+        }
+    }
+
+    @Test
+    public void testSearchWithJoinOrMissText() throws Exception {
+        String sql = "SELECT * "
+                + "FROM [test:Parent] as p "
+                + "LEFT OUTER JOIN [test:Child] as c ON ISCHILDNODE(c, p) "
+                + "WHERE "
+                + " contains(p.*, 'iddqd') or contains(c.*, 'iddqd')";
+
+        Session session = repository.login();
+
+        try {
+            QueryManager qm = session.getWorkspace().getQueryManager();
+            Query q = qm.createQuery(sql, Query.JCR_SQL2);
+            QueryResult result = q.execute();
+            RowIterator rit = result.getRows();
+            int count = 0;
+            while(rit.hasNext()) {
+                Row r = rit.nextRow();
+                System.out.println(">>" + r.getNode("p"));
+                count++;
+            }
+
+            assertEquals(0, count);
         } finally {
             session.logout();
         }
@@ -144,7 +174,7 @@ public class AppTest {
             p3.setProperty("test:parentName", "name3");
 
             Node c1 = p1.addNode("c1", "test:Child");
-            c1.setProperty("test:childName", "c1-name");
+            c1.setProperty("test:childName", "name2");
 
             session.save();
         } finally {
