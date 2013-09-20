@@ -1,0 +1,8 @@
+<test='http://www.test.com'>
+
+[test:Parent]
++ * (test:Child)
+- test:parentName (STRING) mandatory
+
+[test:Child]
+- test:childName (STRING) mandatory
